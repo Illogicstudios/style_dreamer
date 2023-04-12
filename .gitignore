@@ -1,5 +1,6 @@
 main.py
-
+assets/*.ma
+assets/*.mb
 .idea
 
 # Byte-compiled / optimized / DLL files
