@@ -13,10 +13,11 @@ class SDSliderType(Enum):
 
 
 class SDSlider(QWidget):
-    def __init__(self, style_dreamer, type, title, min, max, parent=None, *args, **kwargs):
+    def __init__(self, style_dreamer, type, title, min, max, tooltip="", parent=None, *args, **kwargs):
         super().__init__(parent, *args, **kwargs)
         self.__style_dreamer = style_dreamer
         self.__type = type
+        self.__tooltip = tooltip
         self.__mult = 1000 if self.__type == SDSliderType.FloatSlider else 1
         self.__value = min
         self.__min = min
@@ -35,9 +36,11 @@ class SDSlider(QWidget):
         main_lyt.addLayout(top_lyt)
 
         lbl = QLabel(self.__title)
+        lbl.setToolTip(self.__tooltip)
         top_lyt.addWidget(lbl)
 
         self.__ui_line_edit = QLineEdit(str(self.__value))
+        self.__ui_line_edit.setToolTip(self.__tooltip)
         self.__ui_line_edit.setFixedWidth(50)
         self.__ui_line_edit.editingFinished.connect(self.__on_line_edit_changed)
         top_lyt.addWidget(self.__ui_line_edit, alignment=Qt.AlignRight)
@@ -45,8 +48,8 @@ class SDSlider(QWidget):
         self.__ui_slider = QSlider(Qt.Horizontal)
         self.__ui_slider.setValue(int(self.__value * self.__mult))
         self.__ui_slider.valueChanged.connect(self.__on_slider_changed)
-        self.__ui_slider.setMinimum(self.__min * self.__mult)
-        self.__ui_slider.setMaximum(self.__max * self.__mult)
+        self.__ui_slider.setRange(self.__min * self.__mult,self.__max * self.__mult)
+        self.__ui_slider.setToolTip(self.__tooltip)
         main_lyt.addWidget(self.__ui_slider)
         return main_widget
 
@@ -69,6 +72,10 @@ class SDSlider(QWidget):
 
     def add_value_changed_callback(self, callback):
         self.__ui_slider.valueChanged.connect(callback)
+        self.__ui_line_edit.editingFinished.connect(callback)
+
+    def add_value_submit_callback(self, callback):
+        self.__ui_slider.sliderReleased.connect(callback)
         self.__ui_line_edit.editingFinished.connect(callback)
 
     def get_value(self):

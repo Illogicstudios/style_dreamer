@@ -7,10 +7,18 @@ if __name__ == '__main__':
     if not sys.path.__contains__(install_dir):
         sys.path.append(install_dir)
 
+    # ##################################################################################################################
+
+    __SERVER_HOST = "http://localhost:7860/"
+
+    # ##################################################################################################################
+
     modules = [
-        "StyleDreamer"
+        "StyleDreamer",
+        "StyleVisualizer",
         "SDSlider",
-        "ControlNetRequestManager",
+        "ControlNetManager",
+        "DepthDetail",
     ]
 
     from utils import *
@@ -25,5 +33,5 @@ if __name__ == '__main__':
         style_dreamer.close()
     except:
         pass
-    style_dreamer = StyleDreamer()
+    style_dreamer = StyleDreamer(__SERVER_HOST)
     style_dreamer.show()
