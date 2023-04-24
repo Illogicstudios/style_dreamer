@@ -355,7 +355,7 @@ class StyleDreamer(QDialog):
         self.__denoising_strength_slider.add_value_changed_callback(self.__refresh_submit_btn)
         self.__denoising_strength_slider.add_value_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_depth_slider.create_ui())
-        self.__weight_depth_slider.add_value_changed_callback(self.__refresh_depth_options)
+        self.__weight_depth_slider.add_value_changed_callback(self.__refresh_submit_btn)
         self.__weight_depth_slider.add_value_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_normal_slider.create_ui())
         self.__weight_normal_slider.add_value_changed_callback(self.__refresh_submit_btn)
@@ -440,7 +440,6 @@ class StyleDreamer(QDialog):
         self.__refresh_seed()
         self.__refresh_sliders()
         self.__refresh_depth_distance()
-        self.__refresh_depth_options()
         self.__refresh_depth_type()
         self.__refresh_submit_btn()
 
@@ -464,20 +463,8 @@ class StyleDreamer(QDialog):
         self.__weight_edges_slider.refresh_ui()
 
     def __refresh_submit_btn(self):
-        beauty_active = float(self.__denoising_strength_slider.get_value()) < 1.0
-        depth_active = float(self.__weight_depth_slider.get_value()) > 0.0
-        normal_active = float(self.__weight_normal_slider.get_value()) > 0.0
-        edges_active = float(self.__weight_edges_slider.get_value()) > 0.0
-        depth_valid = self.__depth_min_dist != self.__depth_max_dist
-
-        img_requested = []
-        if beauty_active: img_requested.append(BEAUTY_NAME)
-        if depth_active: img_requested.append(DEPTH_NAME)
-        if normal_active: img_requested.append(NORMAL_NAME)
-        if edges_active: img_requested.append(EDGES_NAME)
-
-        self.__render_btn.setEnabled(not self.__block_new_request and not depth_active or depth_active and depth_valid)
-        self.__dream_btn.setEnabled(not self.__block_new_request and self.__controlnet_manager.has_imgs(img_requested))
+        self.__render_btn.setEnabled(not self.__block_new_request)
+        self.__dream_btn.setEnabled(not self.__block_new_request)
 
     def __refresh_depth_distance(self):
         self.__refreshing = True
@@ -493,10 +480,6 @@ class StyleDreamer(QDialog):
     def __on_slider_render_changed(self):
         self.__controlnet_manager.set_datas(self.__get_datas())
         self.__controlnet_manager.display_render(False, False)
-
-    def __refresh_depth_options(self):
-        self.__ui_option_widget.setEnabled(not float(self.__weight_depth_slider.get_value()) == 0.0)
-        self.__refresh_submit_btn()
 
     def __retrieve_depth_distance(self):
         cam = None

@@ -284,7 +284,8 @@ class ControlNetManager():
         self.__created_objects.append(sde_toon_shader_node)
         sde_toon_shader_node.edgeColor.set((1, 1, 1))
         sde_toon_shader_node.base.set(0)
-        sde_toon_shader_node.angleThreshold.set(25)
+        sde_toon_shader_node.angleThreshold.set(15)
+        sde_toon_shader_node.normalType.set(2)
         sde_toon_shader_node.aovPrefix.set(EDGES_NAME)
         shading_engine = pm.sets(name="sde_shading_engine", empty=True, renderable=True, noSurfaceShader=True)
         self.__created_objects.append(shading_engine)
@@ -377,7 +378,7 @@ class ControlNetManager():
                     "input_image": self.__controlnet_img[DEPTH_NAME][1],
                     "mask": "",
                     "module": "none",
-                    "model": "control_sd15_depth",
+                    "model": "control_v11f1p_sd15_depth",
                     "weight": self.__datas["weight_depth"],
                     "resize_mode": 0,
                     "lowvram": False,
@@ -397,7 +398,7 @@ class ControlNetManager():
                     "input_image": self.__controlnet_img[NORMAL_NAME][1],
                     "mask": "",
                     "module": "none",
-                    "model": "control_sd15_normal",
+                    "model": "control_v11p_sd15_normalbae",
                     "weight": self.__datas["weight_normal"],
                     "resize_mode": 0,
                     "lowvram": False,
@@ -417,7 +418,7 @@ class ControlNetManager():
                     "input_image": self.__controlnet_img[EDGES_NAME][1],
                     "mask": "",
                     "module": "none",
-                    "model": "control_sd15_canny",
+                    "model": "control_v11p_sd15_canny",
                     "weight": self.__datas["weight_edges"],
                     "resize_mode": 0,
                     "lowvram": False,
@@ -431,12 +432,6 @@ class ControlNetManager():
                     "rgbbgr_mode": False
                 })
         return params
-
-    def has_imgs(self, img_names):
-        for img_name in img_names:
-            if img_name not in self.__controlnet_img:
-                return False
-        return True
 
     def set_datas(self, datas):
         self.__datas = datas
