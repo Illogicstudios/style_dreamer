@@ -46,9 +46,9 @@ class SDSlider(QWidget):
         top_lyt.addWidget(self.__ui_line_edit, alignment=Qt.AlignRight)
 
         self.__ui_slider = QSlider(Qt.Horizontal)
-        self.__ui_slider.setValue(int(self.__value * self.__mult))
+        self.__ui_slider.setMinimum(self.__min * self.__mult)
+        self.__ui_slider.setMaximum(self.__max * self.__mult)
         self.__ui_slider.valueChanged.connect(self.__on_slider_changed)
-        self.__ui_slider.setRange(self.__min * self.__mult,self.__max * self.__mult)
         self.__ui_slider.setToolTip(self.__tooltip)
         main_lyt.addWidget(self.__ui_slider)
         return main_widget
@@ -70,13 +70,29 @@ class SDSlider(QWidget):
         self.__value = float(str_value)
         self.__ui_slider.setValue(int(self.__value * self.__mult))
 
-    def add_value_changed_callback(self, callback):
-        self.__ui_slider.valueChanged.connect(callback)
+    def add_changed_callback(self, callback):
+        self.__ui_slider.sliderMoved.connect(callback)
         self.__ui_line_edit.editingFinished.connect(callback)
 
-    def add_value_submit_callback(self, callback):
+    def add_submit_callback(self, callback):
         self.__ui_slider.sliderReleased.connect(callback)
         self.__ui_line_edit.editingFinished.connect(callback)
+
+    def add_slider_moved_callback(self, callback):
+        self.__ui_slider.sliderMoved.connect(callback)
+
+    def add_slider_released_callback(self, callback):
+        self.__ui_slider.sliderReleased.connect(callback)
+
+    def set_min(self,min):
+        self.__min = min
+        if self.__ui_slider:
+            self.__ui_slider.setRange(self.__min * self.__mult, self.__max * self.__mult)
+
+    def set_max(self,max):
+        self.__max = max
+        if self.__ui_slider:
+            self.__ui_slider.setRange(self.__min * self.__mult, self.__max * self.__mult)
 
     def get_value(self):
         return self.__value

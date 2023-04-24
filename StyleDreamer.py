@@ -132,6 +132,9 @@ class StyleDreamer(QDialog):
             "far": ("Details far from the camera", FarDetailed()),
             "close_and_far": ("Details close and far from the camera", CloseAndFarDetailed()),
         }
+        self.__shading_group_depth_edit = None
+        self.__plane_depth_edit = None
+        self.__shader_depth_edit = None
         self.__init_attributes()
 
         # UI attributes
@@ -164,6 +167,8 @@ class StyleDreamer(QDialog):
             SDSlider(self, SDSliderType.FloatSlider, "Weight Normal Guide", 0, 2, "At 0 : Don't use Normal Map at all")
         self.__weight_edges_slider = \
             SDSlider(self, SDSliderType.FloatSlider, "Weight Edges Guide", 0, 2, "At 0 : Don't use Edges Map at all")
+        self.__depth_min_dist_slider = SDSlider(self, SDSliderType.FloatSlider, "Depth Min Distance", 0, 1)
+        self.__depth_max_dist_slider = SDSlider(self, SDSliderType.FloatSlider, "Depth Max Distance", 0, 1)
         self.__set_value_sliders()
 
         # name the window
@@ -189,8 +194,6 @@ class StyleDreamer(QDialog):
         self.__neg_prompt = ""
         self.__random_seed = True
         self.__seed = -1
-        self.__depth_min_dist = 0
-        self.__depth_max_dist = 0
         self.__image_count = 1
         self.__sampling_steps = 15
         self.__cfg_scale = 7
@@ -212,6 +215,7 @@ class StyleDreamer(QDialog):
         self.__weight_depth_slider.set_value(self.__weight_depth)
         self.__weight_normal_slider.set_value(self.__weight_normal)
         self.__weight_edges_slider.set_value(self.__weight_edges)
+        self.__retrieve_depth_distance()
 
     def __reinit(self):
         self.__init_attributes()
@@ -352,17 +356,17 @@ class StyleDreamer(QDialog):
         # Render Input Strength and Controlnet Weight
         content_layout.addWidget(StyleDreamer.get_separator())
         content_layout.addWidget(self.__denoising_strength_slider.create_ui())
-        self.__denoising_strength_slider.add_value_changed_callback(self.__refresh_submit_btn)
-        self.__denoising_strength_slider.add_value_submit_callback(self.__on_slider_render_changed)
+        self.__denoising_strength_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__denoising_strength_slider.add_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_depth_slider.create_ui())
-        self.__weight_depth_slider.add_value_changed_callback(self.__refresh_submit_btn)
-        self.__weight_depth_slider.add_value_submit_callback(self.__on_slider_render_changed)
+        self.__weight_depth_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__weight_depth_slider.add_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_normal_slider.create_ui())
-        self.__weight_normal_slider.add_value_changed_callback(self.__refresh_submit_btn)
-        self.__weight_normal_slider.add_value_submit_callback(self.__on_slider_render_changed)
+        self.__weight_normal_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__weight_normal_slider.add_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_edges_slider.create_ui())
-        self.__weight_edges_slider.add_value_changed_callback(self.__refresh_submit_btn)
-        self.__weight_edges_slider.add_value_submit_callback(self.__on_slider_render_changed)
+        self.__weight_edges_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__weight_edges_slider.add_submit_callback(self.__on_slider_render_changed)
 
         # Option Layout
         self.__ui_option_widget = QFrame()
@@ -375,27 +379,22 @@ class StyleDreamer(QDialog):
         # Depth Map Distance
         lyt_depth_param = QHBoxLayout()
         lyt_depth_dist = QVBoxLayout()
-        lyt_depth_min_dist = QHBoxLayout()
-        lyt_depth_max_dist = QHBoxLayout()
-        lyt_depth_min_dist.addWidget(QLabel("Depth Min Distance"))
-        lyt_depth_max_dist.addWidget(QLabel("Depth Max Distance"))
-        validator = QRegExpValidator(QtCore.QRegExp('^[0-9]*\.?[0-9]*$'))
-        self.__ui_depth_min_dist = QLineEdit()
-        self.__ui_depth_min_dist.setValidator(validator)
-        self.__ui_depth_min_dist.editingFinished.connect(self.__on_depth_dist_changed)
-        self.__ui_depth_max_dist = QLineEdit()
-        self.__ui_depth_max_dist.setValidator(validator)
-        self.__ui_depth_max_dist.editingFinished.connect(self.__on_depth_dist_changed)
-        lyt_depth_min_dist.addWidget(self.__ui_depth_min_dist)
-        lyt_depth_max_dist.addWidget(self.__ui_depth_max_dist)
-        lyt_depth_dist.addLayout(lyt_depth_min_dist)
-        lyt_depth_dist.addLayout(lyt_depth_max_dist)
+
+        lyt_depth_dist.addWidget(self.__depth_min_dist_slider.create_ui())
+        self.__depth_min_dist_slider.add_slider_moved_callback(
+            partial(self.__on_slider_depth_dist_moved, self.__depth_min_dist_slider))
+        self.__depth_min_dist_slider.add_slider_released_callback(self.__on_slider_depth_released)
+        lyt_depth_dist.addWidget(self.__depth_max_dist_slider.create_ui())
+        self.__depth_max_dist_slider.add_slider_moved_callback(
+            partial(self.__on_slider_depth_dist_moved, self.__depth_max_dist_slider))
+        self.__depth_max_dist_slider.add_slider_released_callback(self.__on_slider_depth_released)
+
         lyt_depth_param.addLayout(lyt_depth_dist)
         self.__ui_process_depth_dist_btn = QPushButton()
         self.__ui_process_depth_dist_btn.setIcon(QIcon(os.path.dirname(__file__) + "/assets/process.png"))
         self.__ui_process_depth_dist_btn.setIconSize(QSize(22, 22))
         self.__ui_process_depth_dist_btn.setFixedSize(QSize(30, 30))
-        self.__ui_process_depth_dist_btn.pressed.connect(self.__retrieve_depth_distance)
+        self.__ui_process_depth_dist_btn.pressed.connect(self.__on_recompute_depth_dist)
         lyt_depth_param.addWidget(self.__ui_process_depth_dist_btn)
         option_layout.addLayout(lyt_depth_param, 1)
 
@@ -439,7 +438,6 @@ class StyleDreamer(QDialog):
         self.__refresh_prompt()
         self.__refresh_seed()
         self.__refresh_sliders()
-        self.__refresh_depth_distance()
         self.__refresh_depth_type()
         self.__refresh_submit_btn()
 
@@ -461,16 +459,12 @@ class StyleDreamer(QDialog):
         self.__weight_depth_slider.refresh_ui()
         self.__weight_normal_slider.refresh_ui()
         self.__weight_edges_slider.refresh_ui()
+        self.__depth_min_dist_slider.refresh_ui()
+        self.__depth_max_dist_slider.refresh_ui()
 
     def __refresh_submit_btn(self):
         self.__render_btn.setEnabled(not self.__block_new_request)
         self.__dream_btn.setEnabled(not self.__block_new_request)
-
-    def __refresh_depth_distance(self):
-        self.__refreshing = True
-        self.__ui_depth_min_dist.setText(str(self.__depth_min_dist))
-        self.__ui_depth_max_dist.setText(str(self.__depth_max_dist))
-        self.__refreshing = False
 
     def __refresh_depth_type(self):
         for index in range(self.__ui_depth_type_cbb.count()):
@@ -481,30 +475,57 @@ class StyleDreamer(QDialog):
         self.__controlnet_manager.set_datas(self.__get_datas())
         self.__controlnet_manager.display_render(False, False)
 
+    def __on_slider_depth_dist_moved(self, slider, value):
+        cam_mat = self.__cam.getMatrix(worldSpace=True)
+        cam_tr = self.__cam.getTranslation(space='world')
+        cam_dir = pm.dt.Vector(cam_mat[2][0], cam_mat[2][1], cam_mat[2][2])
+        cam_dir.normalize()
+        if self.__plane_depth_edit is None:
+            self.__plane_depth_edit = pm.polyPlane(w=100, h=100, sx=10, sy=10, n="sd_plane_depth_edit")[0]
+            self.__shading_group_depth_edit = pm.sets(renderable=True, noSurfaceShader=True, empty=True,
+                                                      name='sd_shading_group_depth_edit')
+            self.__shader_depth_edit = pm.shadingNode('aiStandardSurface', asShader=True, name='sd_shader_depth_edit')
+            self.__shader_depth_edit.outColor >> self.__shading_group_depth_edit.surfaceShader
+            pm.sets(self.__shading_group_depth_edit, edit=True, forceElement=self.__plane_depth_edit)
+            self.__shader_depth_edit.transmission.set(0.7)
+            self.__shader_depth_edit.baseColor.set((0,0,1))
+
+            pm.select(clear=True)
+        self.__plane_depth_edit.setTranslation(cam_tr, space='world')
+        dist = slider.get_value()
+        self.__plane_depth_edit.translateBy(cam_dir*-dist, space='world')
+        rotation_quat = pm.dt.Vector(0, 1, 0).rotateTo(cam_dir)
+        self.__plane_depth_edit.setRotation(rotation_quat.asEulerRotation(), space='world')
+
+    def __on_slider_depth_released(self):
+        pm.delete(self.__plane_depth_edit)
+        pm.delete(self.__shader_depth_edit)
+        pm.delete(self.__shading_group_depth_edit)
+        self.__plane_depth_edit = None
+        self.__shader_depth_edit = None
+        self.__shading_group_depth_edit = None
+
+
     def __retrieve_depth_distance(self):
-        cam = None
+        self.__cam = None
         for vp in pm.getPanel(type="modelPanel"):
-            cam = pm.modelEditor(vp, q=1, av=1, cam=1)
-        depth_min_dist, depth_max_dist = StyleDreamer.find_boundaries_from_camera(cam)
-        self.__depth_min_dist = round(depth_min_dist, 3)
-        self.__depth_max_dist = round(depth_max_dist, 3)
-        self.__refresh_depth_distance()
-        self.__refresh_submit_btn()
+            self.__cam = pm.modelEditor(vp, q=1, av=1, cam=1)
+        min_val, max_val = StyleDreamer.find_boundaries_from_camera(self.__cam)
+        min_bound = round(max(min_val - max_val / 2, 0))
+        max_bound = round(max_val * 1.5)
+        depth_min_dist = round(min_val, 3)
+        depth_max_dist = round(max_val, 3)
+        self.__depth_min_dist_slider.set_min(min_bound)
+        self.__depth_min_dist_slider.set_max(max_bound)
+        self.__depth_min_dist_slider.set_value(depth_min_dist)
+        self.__depth_max_dist_slider.set_min(min_bound)
+        self.__depth_max_dist_slider.set_max(max_bound)
+        self.__depth_max_dist_slider.set_value(depth_max_dist)
 
-    def __on_depth_dist_changed(self):
-        if not self.__refreshing:
-            depth_min_str = self.__ui_depth_min_dist.text()
-            if len(depth_min_str) > 0:
-                self.__depth_min_dist = float(depth_min_str)
-
-            depth_max_str = self.__ui_depth_max_dist.text()
-            if len(depth_max_str) > 0:
-                self.__depth_max_dist = float(depth_max_str)
-
-            if self.__depth_max_dist < self.__depth_min_dist:
-                self.__depth_max_dist = self.__depth_min_dist
-            self.__refresh_depth_distance()
-            self.__refresh_submit_btn()
+    def __on_recompute_depth_dist(self):
+        self.__retrieve_depth_distance()
+        self.__depth_min_dist_slider.refresh_ui()
+        self.__depth_max_dist_slider.refresh_ui()
 
     def __on_depth_type_changed(self, index):
         self.__depth_type = self.__ui_depth_type_cbb.itemData(index, Qt.UserRole)
@@ -561,8 +582,9 @@ class StyleDreamer(QDialog):
             "denoising_strength": float(self.__denoising_strength_slider.get_value()),
             "weight_depth": float(self.__weight_depth_slider.get_value()),
             "weight_normal": float(self.__weight_normal_slider.get_value()),
-            "weight_edges": float(self.__weight_edges_slider.get_value()), "depth_min_dist": self.__depth_min_dist,
-            "depth_max_dist": self.__depth_max_dist,
+            "weight_edges": float(self.__weight_edges_slider.get_value()),
+            "depth_min_dist": float(self.__depth_min_dist_slider.get_value()),
+            "depth_max_dist": float(self.__depth_max_dist_slider.get_value()),
             "depth_type": self.__depth_types[self.__depth_type][1],
             "width": int(self.__width_slider.get_value()),
             "height": int(self.__height_slider.get_value())

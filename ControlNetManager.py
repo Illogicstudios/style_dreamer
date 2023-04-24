@@ -284,7 +284,7 @@ class ControlNetManager():
         self.__created_objects.append(sde_toon_shader_node)
         sde_toon_shader_node.edgeColor.set((1, 1, 1))
         sde_toon_shader_node.base.set(0)
-        sde_toon_shader_node.angleThreshold.set(15)
+        sde_toon_shader_node.angleThreshold.set(20)
         sde_toon_shader_node.normalType.set(2)
         sde_toon_shader_node.aovPrefix.set(EDGES_NAME)
         shading_engine = pm.sets(name="sde_shading_engine", empty=True, renderable=True, noSurfaceShader=True)
