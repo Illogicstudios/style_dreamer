@@ -30,7 +30,7 @@ __SERVER_HOST = "http://localhost:7860/"
 
 ---
 
-### Generation Interface
+## Generation Interface
 
 
 <div align="center">
@@ -43,7 +43,7 @@ __SERVER_HOST = "http://localhost:7860/"
 
 In the window, we can specify a lot of parameters. Let’s take them step by step :
 
-#### Prompt parameters
+### Prompt parameters
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519283-e16f06b0-f575-4c8c-a774-8203f5b674c5.png" width=50%>
@@ -60,7 +60,7 @@ On the other hand in the **Negative Prompt** part you can specify what the image
 *Use short sentences, with few linking words (replace them by commas for example). Single words are often more effective than a long descriptive sentence.*
 
 
-#### Generation parameters
+### Generation parameters
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519346-80a94e97-5c89-4dda-b858-6a0ec5c4c4d9.png" width=60%>
@@ -77,7 +77,7 @@ The **Sampling Steps** parameter indicates the number of times the algorithm sho
 
 *Try to keep this parameter between 10 and 40 to have enough steps while conserving good performance.*
 
-#### Image parameters
+### Image parameters
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519396-066eaa33-567d-4b66-b172-6ade772eb09e.png" width=60%>
@@ -96,7 +96,7 @@ The **Width** and **Height** parameters control the image size of the renders an
 
 *Try to keep these values not too high as they impact a lot on rendering and generation times.*
 
-#### Render Weight parameters
+### Render Weight parameters
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519439-f5dd1c11-9383-4c9f-b2d7-e7aebbcba760.png" width=70%>
@@ -147,7 +147,7 @@ The **Weight Edges Guide** parameter controls the importance that the Edges Map 
 
 *Artifacts at edges can occur when this value is too high.*
 
-#### Depth Map parameters
+### Depth Map parameters
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519734-231b5159-6015-4605-b4e8-134579bfbb75.png" width=80%>
@@ -173,7 +173,7 @@ The **Depth Details** parameter controls where the depth map should have more de
 
 Try with the Uniformly repartition first and take another one if it doesn’t correspond well to the scene.
 
-#### Buttons
+### Buttons
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519847-8a9b55d9-3354-4bdc-97de-f1f7d7b403eb.png" width=70%>
@@ -196,7 +196,7 @@ The **Dream Style** button launches the request to generate the images with the 
 
 *During this process Maya is free and not blocked but you can’t launch another dream request*
 
-### Visualizer Interface
+## Visualizer Interface
 
 <div align="center">
   <span>
@@ -205,7 +205,7 @@ The **Dream Style** button launches the request to generate the images with the 
   <br/>
 </div>
 
-#### Visualizer
+### Visualizer
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234519976-e64c314a-fcf9-4fc7-bc48-716a3df60c3a.png" width=60%>
@@ -219,7 +219,7 @@ There is a loading bar to have a feedback on the status of the dream request.
 
 Don’t worry if the request is stuck at 1% or at the end of the bar during more time. It’s because the server loads some datas before processing the request and because the generated images need to be retrieved at the end.
 
-#### Inputs and Outputs
+### Inputs and Outputs
 <div align="center">
   <span>
     <img src="https://user-images.githubusercontent.com/117286626/234520026-b0177aea-995a-41f3-82c2-3a7f4b2d0ca3.png" width=70%>
