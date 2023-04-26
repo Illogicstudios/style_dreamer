@@ -6,6 +6,7 @@ class DepthDetail(ABC):
     def __init__(self, pos_array):
         self.__pos_array = pos_array
 
+    # Set Interpolation Step according to the array of point
     def set_interp_on(self, remap_node):
         for index, interp_data in enumerate(self.__pos_array):
             interp_index = index + 2

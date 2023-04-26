@@ -46,6 +46,7 @@ from ControlNetManager import *
 
 class StyleDreamer(QDialog):
 
+    # Generate a Pyside separator
     @staticmethod
     def get_separator(vertical=False):
         line = QFrame()
@@ -53,6 +54,7 @@ class StyleDreamer(QDialog):
         line.setFrameShadow(QFrame.Raised)
         return line
 
+    # Test if a point 3D is in front of the camera
     @staticmethod
     def is_point_in_front_of_camera(cam_transform, pt):
         cam_pos = cam_transform.getTranslation(space="world")
@@ -63,6 +65,7 @@ class StyleDreamer(QDialog):
         pt_vector.normalize()
         return pm.dt.dot(front_vector, pt_vector) >= 0
 
+    # Find Boundaries of the scene seen by the camera
     @staticmethod
     def find_boundaries_from_camera(cam_transform):
         # Get all mesh transform nodes in the scene
@@ -189,6 +192,7 @@ class StyleDreamer(QDialog):
         else:
             self.close()
 
+    # Default value of parameters
     def __init_attributes(self):
         self.__prompt = ""
         self.__neg_prompt = ""
@@ -205,6 +209,7 @@ class StyleDreamer(QDialog):
         self.__width_img = pm.getAttr("defaultResolution.width")
         self.__height_img = pm.getAttr("defaultResolution.height")
 
+    # Set value of all sliders
     def __set_value_sliders(self):
         self.__image_count_slider.set_value(self.__image_count)
         self.__sampling_steps_slider.set_value(self.__sampling_steps)
@@ -217,6 +222,7 @@ class StyleDreamer(QDialog):
         self.__weight_edges_slider.set_value(self.__weight_edges)
         self.__retrieve_depth_distance()
 
+    # Reinit values and refresh UI
     def __reinit(self):
         self.__init_attributes()
         self.__set_value_sliders()
@@ -356,16 +362,16 @@ class StyleDreamer(QDialog):
         # Render Input Strength and Controlnet Weight
         content_layout.addWidget(StyleDreamer.get_separator())
         content_layout.addWidget(self.__denoising_strength_slider.create_ui())
-        self.__denoising_strength_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__denoising_strength_slider.add_changed_callback(self.__refresh_btn)
         self.__denoising_strength_slider.add_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_depth_slider.create_ui())
-        self.__weight_depth_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__weight_depth_slider.add_changed_callback(self.__refresh_btn)
         self.__weight_depth_slider.add_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_normal_slider.create_ui())
-        self.__weight_normal_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__weight_normal_slider.add_changed_callback(self.__refresh_btn)
         self.__weight_normal_slider.add_submit_callback(self.__on_slider_render_changed)
         content_layout.addWidget(self.__weight_edges_slider.create_ui())
-        self.__weight_edges_slider.add_changed_callback(self.__refresh_submit_btn)
+        self.__weight_edges_slider.add_changed_callback(self.__refresh_btn)
         self.__weight_edges_slider.add_submit_callback(self.__on_slider_render_changed)
 
         # Option Layout
@@ -439,16 +445,19 @@ class StyleDreamer(QDialog):
         self.__refresh_seed()
         self.__refresh_sliders()
         self.__refresh_depth_type()
-        self.__refresh_submit_btn()
+        self.__refresh_btn()
 
+    # Refresh the prompt parameters
     def __refresh_prompt(self):
         self.__ui_prompt.setPlainText(self.__prompt)
         self.__ui_neg_prompt.setPlainText(self.__neg_prompt)
 
+    # Refresh the seed parameters
     def __refresh_seed(self):
         self.__ui_seed.setText(str(self.__seed))
         self.__ui_random_seed_cb.setChecked(self.__random_seed)
 
+    # Refresh all the sliders
     def __refresh_sliders(self):
         self.__image_count_slider.refresh_ui()
         self.__sampling_steps_slider.refresh_ui()
@@ -462,19 +471,23 @@ class StyleDreamer(QDialog):
         self.__depth_min_dist_slider.refresh_ui()
         self.__depth_max_dist_slider.refresh_ui()
 
-    def __refresh_submit_btn(self):
+    # Refresh the Render and Dream buttons
+    def __refresh_btn(self):
         self.__render_btn.setEnabled(not self.__block_new_request)
         self.__dream_btn.setEnabled(not self.__block_new_request)
 
+    # Refresh the Depth type
     def __refresh_depth_type(self):
         for index in range(self.__ui_depth_type_cbb.count()):
             if self.__ui_depth_type_cbb.itemData(index, Qt.UserRole) == self.__depth_type:
                 self.__ui_depth_type_cbb.setCurrentIndex(index)
 
+    # On render slider changed Update visualizer
     def __on_slider_render_changed(self):
         self.__controlnet_manager.set_datas(self.__get_datas())
         self.__controlnet_manager.display_render(False, False)
 
+    # On Depth Map distance parameter slider moved create visualization plane
     def __on_slider_depth_dist_moved(self, slider, value):
         cam_mat = self.__cam.getMatrix(worldSpace=True)
         cam_tr = self.__cam.getTranslation(space='world')
@@ -497,6 +510,7 @@ class StyleDreamer(QDialog):
         rotation_quat = pm.dt.Vector(0, 1, 0).rotateTo(cam_dir)
         self.__plane_depth_edit.setRotation(rotation_quat.asEulerRotation(), space='world')
 
+    # On slider depth released delete the visualization plane
     def __on_slider_depth_released(self):
         pm.delete(self.__plane_depth_edit)
         pm.delete(self.__shader_depth_edit)
@@ -505,7 +519,7 @@ class StyleDreamer(QDialog):
         self.__shader_depth_edit = None
         self.__shading_group_depth_edit = None
 
-
+    # Retrieve the depth min and max distance in the scene
     def __retrieve_depth_distance(self):
         self.__cam = None
         for vp in pm.getPanel(type="modelPanel"):
@@ -522,14 +536,17 @@ class StyleDreamer(QDialog):
         self.__depth_max_dist_slider.set_max(max_bound)
         self.__depth_max_dist_slider.set_value(depth_max_dist)
 
+    # On recompute depth distances
     def __on_recompute_depth_dist(self):
         self.__retrieve_depth_distance()
         self.__depth_min_dist_slider.refresh_ui()
         self.__depth_max_dist_slider.refresh_ui()
 
+    # On Depth type changed
     def __on_depth_type_changed(self, index):
         self.__depth_type = self.__ui_depth_type_cbb.itemData(index, Qt.UserRole)
 
+    # On random seed chackbox state changed
     def __on_random_seed_checked(self, state):
         self.__random_seed = state == 2
         if self.__random_seed:
@@ -538,6 +555,7 @@ class StyleDreamer(QDialog):
             self.__seed = 0
         self.__refresh_seed()
 
+    # On seed modified
     def __on_seed_modified(self, seed):
         try:
             self.__seed = int(seed)
@@ -550,13 +568,16 @@ class StyleDreamer(QDialog):
             # Nothing
             pass
 
+    # On seed editing finished
     def __on_seed_editing_finished(self):
         self.__ui_seed.setText(str(self.__seed))
 
+    # Reset the seed to the previous one
     def __set_previous_seed(self):
         self.__seed = self.__previous_seed
         self.__refresh_seed()
 
+    # Compute the batch count and Batch size according to the number of image
     def __get_batch_param(self):
         image_count = int(self.__image_count_slider.get_value())
         if image_count <= 8:
@@ -569,6 +590,7 @@ class StyleDreamer(QDialog):
                     break
             return image_count / batch_size, batch_size
 
+    # Generate datas to give to stable diffusion API
     def __get_datas(self):
         batch_count, batch_size = self.__get_batch_param()
         datas = {
@@ -591,39 +613,36 @@ class StyleDreamer(QDialog):
         }
         return datas
 
+    # Submit the dream request
     def __on_dream(self):
         self.__previous_seed = self.__seed
         self.__block_new_request = True
-        self.__refresh_submit_btn()
+        self.__refresh_btn()
         datas = self.__get_datas()
         self.__controlnet_manager.set_datas(datas)
         self.__controlnet_manager.display_render()
         threading.Thread(target=self.__controlnet_manager.request_controlnet).start()
 
+    # Open the visualizer
     def __on_open_visualizer(self):
         self.__controlnet_manager.display_render(False)
 
+    # Render the scene
     def __on_render(self):
         self.__block_new_request = True
-        self.__refresh_submit_btn()
+        self.__refresh_btn()
 
         datas = self.__get_datas()
         self.__controlnet_manager.set_datas(datas)
-
-        beauty_active = datas["denoising_strength"] < 1
-        depth_active = datas["weight_depth"] > 0
-        normal_active = datas["weight_normal"] > 0
-        edges_active = datas["weight_edges"] > 0
-
-        if beauty_active or depth_active or normal_active or edges_active:
-            self.__controlnet_manager.prepare_cn_render()
-            self.__controlnet_manager.cn_render()
+        self.__controlnet_manager.prepare_cn_render()
+        self.__controlnet_manager.cn_render()
         self.__controlnet_manager.display_render()
 
         self.__block_new_request = False
-        self.__refresh_submit_btn()
+        self.__refresh_btn()
 
+    # Callback dream request
     def __on_dream_done(self,seed):
         self.__previous_seed = seed
         self.__block_new_request = False
-        self.__refresh_submit_btn()
+        self.__refresh_btn()

@@ -20,6 +20,7 @@ from StyleVisualizer import *
 
 class ControlNetManager():
 
+    # Set Features Overrides parameters (needed for render)
     @staticmethod
     def __set_features_overrides():
         pm.setAttr("defaultArnoldRenderOptions.ignoreTextures", 0)
@@ -42,10 +43,12 @@ class ControlNetManager():
         for aov in aov_list:
             aov.enabled.set(False)
 
+    # Set raw colorspace (needed for render)
     @staticmethod
     def __set_raw_colorspace():
         pm.setAttr("defaultArnoldDriver.colorManagement", 0)
 
+    # Set sampling parameters (needed for render)
     @staticmethod
     def __set_sampling_params():
         pm.setAttr("defaultArnoldRenderOptions.AASamples", 3)
@@ -58,6 +61,7 @@ class ControlNetManager():
         pm.setAttr("defaultArnoldRenderOptions.GISpecularDepth", 1)
         pm.setAttr("defaultArnoldRenderOptions.enableAdaptiveSampling", 0)
 
+    # Hide furs (needed for render)
     @staticmethod
     def __hide_furs():
         standins = pm.ls(type="aiStandIn")
@@ -65,6 +69,7 @@ class ControlNetManager():
             if re.match(r"^.*fur.*$", standin.dso.get()):
                 pm.hide(standin)
 
+    # Remove render layers (needed for render)
     @staticmethod
     def __remove_render_layer():
         render_layers = pm.ls(type="renderLayer")
@@ -72,6 +77,7 @@ class ControlNetManager():
             render_layer.renderable.set(render_layer.name() == "defaultRenderLayer")
 
     # Inspired from https://github.com/coolzilj/Blender-ControlNet
+    # Request the Stable Diffusion Controlnet API
     @staticmethod
     def __request_controlnet_api(params, request_url, output_dir):
         # create headers
@@ -97,6 +103,7 @@ class ControlNetManager():
         else:
             return ControlNetManager.handle_api_error(response)
 
+    # Handle Stable Diffusion API Response Error
     @staticmethod
     def handle_api_error(response):
         if response.status_code == 404:
@@ -119,6 +126,7 @@ class ControlNetManager():
             msg = "An error occurred in the server : \n\n" + str(response.content)
         return None, -1, msg
 
+    # Handle Stable Diffusion API Response Success
     @staticmethod
     def handle_api_success(response, output_dir):
         try:
@@ -156,6 +164,7 @@ class ControlNetManager():
         # return the temp file
         return output_files, seed, "Success"
 
+    # Request the Stable Diffusion for the ETA
     @staticmethod
     def __request_eta_api(request_url):
         # create headers
@@ -190,6 +199,7 @@ class ControlNetManager():
         self.__request_eta_callback = CallbackThread(self.__on_request_eta_finished)
         self.__request_eta_run = CallbackThread(self.__run_observer_eta)
 
+    # Set the Output parameters (needed for render)
     def __set_output_params(self):
         pm.setAttr("defaultRenderGlobals.imageFilePrefix", os.path.join(self.__render_dir, "<RenderPass>"))
         pm.setAttr("defaultArnoldDriver.mergeAOVs", False)
@@ -205,9 +215,11 @@ class ControlNetManager():
         pm.setAttr("defaultRenderGlobals.periodInExt", 1)
         pm.setAttr("defaultRenderGlobals.putFrameBeforeExt", True)
 
+    # Getter of whether a request is pending
     def is_requesting_dream(self):
         return self.__requesting_dream
 
+    # Delete the AOV created objects
     def __delete_created_objects(self):
         for obj in self.__created_objects:
             try:
@@ -217,6 +229,7 @@ class ControlNetManager():
                 pass
         self.__created_objects.clear()
 
+    # Create Depth AOV
     def __create_depth_aov(self):
         depth_max_dist = self.__datas["depth_max_dist"]
         depth_details = self.__datas["depth_type"]
@@ -244,6 +257,7 @@ class ControlNetManager():
         sdd_inverse_node.outFloat >> node_aov.defaultValue
         depth_details.set_interp_on(sdd_remap_node)
 
+    # Create Normal AOV
     def __create_normal_aov(self):
         sdn_normal_node = pm.shadingNode("aiStateVector", name="sdn_normal", asUtility=True)
         self.__created_objects.append(sdn_normal_node)
@@ -279,6 +293,7 @@ class ControlNetManager():
         self.__created_objects.append(node_aov)
         sdn_space_trsf_2_node.outValue >> node_aov.defaultValue
 
+    # Create Edges AOV
     def __create_edges_aov(self):
         sde_toon_shader_node = pm.shadingNode("aiToon", name="sde_toon", asShader=True)
         self.__created_objects.append(sde_toon_shader_node)
@@ -304,6 +319,7 @@ class ControlNetManager():
         pm.connectAttr(contour_filter + ".message", aov_node_name + '.outputs[0].filter', f=True)
         sde_toon_shader_node.outColor >> node_aov.defaultValue
 
+    # Get the txt2img parameters
     def __params_txt2img(self):
         return {
             "enable_hr": False,
@@ -311,6 +327,7 @@ class ControlNetManager():
             "firstphase_height": 0,
         }
 
+    # Get the img2img parameters
     def __params_img2img(self):
         return {
             "denoising_strength": self.__datas["denoising_strength"],
@@ -320,12 +337,14 @@ class ControlNetManager():
             "resize_mode": 0,
         }
 
-    def __generate_request_url(self):
+    # Get the correct URL for the dream request
+    def __get_request_url(self):
         if self.__datas["denoising_strength"] < 1.0:
             return self.__url_server + "/sdapi/v1/img2img"
         else:
             return self.__url_server + "/sdapi/v1/txt2img"
 
+    # Generate the params dict
     def __generate_params(self):
         # COMMON PARAMETERS
         params = {
@@ -433,9 +452,11 @@ class ControlNetManager():
                 })
         return params
 
+    # Setter of the datas
     def set_datas(self, datas):
         self.__datas = datas
 
+    # Prepare for a render
     def prepare_cn_render(self):
         ControlNetManager.__remove_render_layer()
         ControlNetManager.__set_features_overrides()
@@ -446,16 +467,19 @@ class ControlNetManager():
         self.__create_normal_aov()
         self.__create_edges_aov()
 
+    # On main window close, close the visualizer
+    def on_close(self):
+        self.__style_visualizer.close()
+        self.__style_visualizer.deleteLater()
+
+    # Retrieve existing render
     def __retrieve_render(self, render_name, render_filename):
         path = os.path.join(self.__render_dir, render_filename)
         if os.path.exists(path):
             with open(path, "rb") as file:
                 self.__controlnet_img[render_name] = (path, base64.b64encode(file.read()).decode())
 
-    def on_close(self):
-        self.__style_visualizer.close()
-        self.__style_visualizer.deleteLater()
-
+    # Retrieve existing renders
     def retrieve_renders(self):
         self.__controlnet_img.clear()
         self.__retrieve_render(BEAUTY_NAME, "beauty_1.png")
@@ -463,11 +487,13 @@ class ControlNetManager():
         self.__retrieve_render(NORMAL_NAME, NORMAL_NAME + ".png")
         self.__retrieve_render(EDGES_NAME, EDGES_NAME + ".png")
 
+    # Generate ControlNet Render with AOV created
     def cn_render(self):
         pm.mel.eval("arnoldRender -seq 1")
         self.retrieve_renders()
         self.__delete_created_objects()
 
+    # Display the Visualizer
     def display_render(self, reinit_output_files=True, show = True):
         used_input_filepaths = []
         input_files_and_names = []
@@ -502,6 +528,7 @@ class ControlNetManager():
             self.__style_visualizer.show()
         self.__style_visualizer.set_focus_input()
 
+    # Callback Dream Request end, display the visualizer
     def __on_request_dream_finished(self, output_filepaths, seed, error_msg):
         self.__requesting_dream = False
         self.__job_timestamp = None
@@ -523,6 +550,7 @@ class ControlNetManager():
         self.__style_visualizer.refresh_progress_bar()
         self.__callback_dream(seed)
 
+    # Callback ETA request, display on the visualizer
     def __on_request_eta_finished(self, response_dict):
         renew_eta_request = True
         if type(response_dict) is int:
@@ -545,6 +573,7 @@ class ControlNetManager():
         if renew_eta_request:
             threading.Thread(target=self.__request_eta).start()
 
+    # Run the process  observing the ETA requests
     def __run_observer_eta(self):
         self.__launch_timestamp = int(time.time())
         self.__job_timestamp = None
@@ -552,15 +581,17 @@ class ControlNetManager():
         self.__style_visualizer.refresh_progress_bar()
         self.__request_eta()
 
+    # Launch the Controlnet Stable Diffusion Request
     def request_controlnet(self):
         self.__requesting_dream = True
         os.makedirs(self.__output_dir, exist_ok=True)
         params = self.__generate_params()
-        request_url = self.__generate_request_url()
+        request_url = self.__get_request_url()
         self.__request_eta_run.run_callback()
         output_filepaths, seed, error_msg = ControlNetManager.__request_controlnet_api(params, request_url, self.__output_dir)
         self.__request_dream_callback.run_callback(output_filepaths, seed, error_msg)
 
+    # Run the request for ETA
     def __request_eta(self):
         request_url = self.__url_server + "/sdapi/v1/progress"
         response_dict = ControlNetManager.__request_eta_api(request_url)

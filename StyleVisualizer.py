@@ -36,6 +36,7 @@ class CurrentImageLabel(QLabel):
         point.setY((size.height() - scaledPix.height()) / 2)
         painter.drawPixmap(point, scaledPix)
 
+    # Change path of the Image and repaint it
     def set_path(self, path):
         self.__pixmap = QPixmap(path)
         self.repaint()
@@ -51,6 +52,7 @@ class CurrentImageLabelWidget(QWidget):
         vb_layout.addWidget(self.__label)
         self.setLayout(vb_layout)
 
+    # Change the Image path
     def set_path(self, path):
         self.__label.set_path(path)
 
@@ -85,28 +87,23 @@ class StyleVisualizer(QDialog):
         self.__create_ui()
         self.__refresh_ui()
 
-    def showEvent(self, arg__1: QShowEvent) -> None:
-        pass
-        # self.__selection_callback = \
-        #     OpenMaya.MEventMessage.addEventCallback("SelectionChanged", self.on_selection_changed)
-
-    # Remove callbacks
-    def hideEvent(self, arg__1: QCloseEvent) -> None:
-        pass
-        # OpenMaya.MMessage.removeCallback(self.__selection_callback)
-
+    # Setter of the ETA
     def set_eta(self, eta):
         self.__request_eta = eta
 
+    # Getter of the ETA
     def get_eta(self):
         return self.__request_eta
 
+    # Setter of the input files
     def set_input_files(self, input_filepaths):
         self.__input_files = input_filepaths
 
+    # Setter of the input used files
     def set_input_used_files(self, input_render_used):
         self.__input_used_files = input_render_used
 
+    # Setter of the output files
     def set_output_files(self, output_filepaths):
         self.__output_files = output_filepaths
 
@@ -180,34 +177,39 @@ class StyleVisualizer(QDialog):
         self.refresh_output_files()
         self.refresh_progress_bar()
 
+    # Set the focus on the input files
     def set_focus_input(self):
         self.raise_()
         self.__ui_list_input_file.setFocus()
         self.__ui_list_input_file.setCurrentItem(self.__ui_list_input_file.item(0))
 
+    # Set the focus on the output files
     def set_focus_output(self):
         self.raise_()
         self.__ui_list_output_file.setFocus()
         self.__ui_list_output_file.setCurrentItem(self.__ui_list_output_file.item(0))
 
+    # Refresh the current Image UI
     def __refresh_current_img(self):
         if self.__current_image is not None:
             self.__ui_current_img.set_path(self.__current_image)
 
+    # Refresh the list of input images
     def refresh_input_files(self):
         self.__ui_list_input_file.clear()
         for name, file_path in self.__input_files:
             item = QListWidgetItem()
             if file_path in self.__input_used_files:
                 item.setBackgroundColor(QColor(51, 120, 56))
-                item.setToolTip("<b>"+name + "</b> used")
+                item.setToolTip("<b>" + name + "</b> used")
             else:
                 item.setBackgroundColor(QColor(169, 64, 64))
-                item.setToolTip("<b>"+name+"</b> rendered but not used")
+                item.setToolTip("<b>" + name + "</b> rendered but not used")
             item.setIcon(QIcon(file_path))
             item.setData(Qt.UserRole, file_path)
             self.__ui_list_input_file.addItem(item)
 
+    # Refresh the list of output images
     def refresh_output_files(self):
         self.__ui_list_output_file.clear()
         for file_path in self.__output_files:
@@ -216,16 +218,20 @@ class StyleVisualizer(QDialog):
             item.setData(Qt.UserRole, file_path)
             self.__ui_list_output_file.addItem(item)
 
+    # Refresh the progress bar according to the eta
     def refresh_progress_bar(self):
         self.__progress_bar.setEnabled(self.__controlnet_manager.is_requesting_dream())
         self.__progress_bar.setValue(self.__request_eta)
 
+    # On Input file selected display in the current image
     def __on_input_file_selected(self):
         self.__on_file_selected(self.__ui_list_input_file, self.__ui_list_output_file)
 
+    # On Output file selected display in the current image
     def __on_output_file_selected(self):
         self.__on_file_selected(self.__ui_list_output_file, self.__ui_list_input_file)
 
+    # On file selected display in the current image
     def __on_file_selected(self, list_selection, list_unselection):
         selected_items = list_selection.selectedItems()
         list_unselection.clearSelection()

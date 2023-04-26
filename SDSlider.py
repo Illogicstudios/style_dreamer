@@ -26,6 +26,7 @@ class SDSlider(QWidget):
         self.__ui_slider = None
         self.__ui_line_edit = None
 
+    # Create the Slider/Label/LineEdit UI
     def create_ui(self):
         main_widget = QWidget()
         main_lyt = QVBoxLayout(main_widget)
@@ -53,49 +54,60 @@ class SDSlider(QWidget):
         main_lyt.addWidget(self.__ui_slider)
         return main_widget
 
+    # Refresh the UI
     def refresh_ui(self):
         if self.__ui_slider:
             self.__ui_slider.setValue(int(self.__value * self.__mult))
         if self.__ui_line_edit:
             self.__ui_line_edit.setText(str(self.__value))
 
+    # On slider changed
     def __on_slider_changed(self, value):
         self.__value = value / self.__mult
         if self.__type is SDSliderType.IntSlider:
             self.__value = int(value)
         self.__ui_line_edit.setText(str(self.__value))
 
+    # On line changed
     def __on_line_edit_changed(self):
         str_value = self.__ui_line_edit.text()
         self.__value = float(str_value)
         self.__ui_slider.setValue(int(self.__value * self.__mult))
 
+    # Add callback for when value changes
     def add_changed_callback(self, callback):
         self.__ui_slider.sliderMoved.connect(callback)
         self.__ui_line_edit.editingFinished.connect(callback)
 
+    # Add callback for when value is submitted
     def add_submit_callback(self, callback):
         self.__ui_slider.sliderReleased.connect(callback)
         self.__ui_line_edit.editingFinished.connect(callback)
 
+    # Add callback for when slider move
     def add_slider_moved_callback(self, callback):
         self.__ui_slider.sliderMoved.connect(callback)
 
+    # Add callback for when slider is released
     def add_slider_released_callback(self, callback):
         self.__ui_slider.sliderReleased.connect(callback)
 
+    # Setter of the min value
     def set_min(self,min):
         self.__min = min
         if self.__ui_slider:
             self.__ui_slider.setRange(self.__min * self.__mult, self.__max * self.__mult)
 
+    # Setter of the max value
     def set_max(self,max):
         self.__max = max
         if self.__ui_slider:
             self.__ui_slider.setRange(self.__min * self.__mult, self.__max * self.__mult)
 
+    # Getter of the value
     def get_value(self):
         return self.__value
 
+    # Setter of the value
     def set_value(self, value):
         self.__value = value
