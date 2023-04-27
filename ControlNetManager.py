@@ -11,14 +11,14 @@ import threading
 from functools import partial
 
 import pymel.core as pm
-from utils import *
+from common.utils import *
 import mtoa.aovs as aovs
 
-from StyleDreamer import *
-from StyleVisualizer import *
+from .StyleDreamer import *
+from .StyleVisualizer import *
 
 
-class ControlNetManager():
+class ControlNetManager:
 
     # Set Features Overrides parameters (needed for render)
     @staticmethod

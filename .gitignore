@@ -1,4 +1,4 @@
-main.py
+local_main.py
 assets/*.ma
 assets/*.mb
 .idea

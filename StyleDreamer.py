@@ -17,15 +17,15 @@ from PySide2.QtGui import *
 
 from shiboken2 import wrapInstance
 
-from utils import *
+from common.utils import *
 
-from Prefs import *
+from common.Prefs import *
 
 import maya.OpenMaya as OpenMaya
 
-from SDSlider import *
-import DepthDetail
-from DepthDetail import *
+from .SDSlider import *
+import style_dreamer.DepthDetail
+from .DepthDetail import *
 
 # ######################################################################################################################
 
@@ -41,7 +41,7 @@ _MAX_BATCH_SIZE = 8
 
 BEAUTY_NAME = "beauty"
 
-from ControlNetManager import *
+from .ControlNetManager import *
 
 
 class StyleDreamer(QDialog):

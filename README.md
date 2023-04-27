@@ -14,14 +14,6 @@ You can download the models here : https://huggingface.co/lllyasviel/ControlNet-
 You will need the Depth model, the Normal model and the Canny model. 
 (Retrieve the ```.pth``` files and the ```.yaml``` files)
 
-You must specify the correct path of the installation folder in the ```template_main.py``` file :
-```python
-if __name__ == '__main__':
-    # TODO specify the right path
-    install_dir = 'PATH/TO/style_dreamer'
-    # [...]
-```
-
 Change the server if you need it. (If you host the Automatic Web UI on the same computer than Style Dreamer then 
 localhost works)
 ```python
