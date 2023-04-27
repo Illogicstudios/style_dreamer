@@ -458,6 +458,7 @@ class ControlNetManager:
 
     # Prepare for a render
     def prepare_cn_render(self):
+        pm.loadPlugin("lookdevKit.mll")
         ControlNetManager.__remove_render_layer()
         ControlNetManager.__set_features_overrides()
         self.__set_output_params()
