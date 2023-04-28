@@ -1,5 +1,7 @@
 import math
 import os
+import webbrowser
+import subprocess
 from enum import Enum
 from functools import partial
 
@@ -419,24 +421,28 @@ class StyleDreamer(QDialog):
         lyt_bottom = QGridLayout()
         lyt_bottom.setColumnStretch(0, 1)
         lyt_bottom.setColumnStretch(1, 1)
-        lyt_bottom.setColumnStretch(2, 3)
+        lyt_bottom.setColumnStretch(2, 1)
+        lyt_bottom.setColumnStretch(3, 3)
         self.__reinit_params_btn = QPushButton("Reinit Parameters")
         self.__reinit_params_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.__reinit_params_btn.clicked.connect(self.__reinit)
         lyt_bottom.addWidget(self.__reinit_params_btn, 0, 0, 2, 1)
-
+        self.__open_web_ui_btn = QPushButton("Open Web UI")
+        self.__open_web_ui_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.__open_web_ui_btn.clicked.connect(self.__on_open_web_ui)
+        lyt_bottom.addWidget(self.__open_web_ui_btn, 0, 1, 2, 1)
         self.__open_modal_btn = QPushButton("Visualizer")
         self.__open_modal_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         self.__open_modal_btn.clicked.connect(self.__on_open_visualizer)
-        lyt_bottom.addWidget(self.__open_modal_btn, 0, 1, 2, 1)
+        lyt_bottom.addWidget(self.__open_modal_btn, 0, 2, 2, 1)
         self.__render_btn = QPushButton("Render")
         self.__render_btn.setFixedHeight(30)
         self.__render_btn.clicked.connect(self.__on_render)
-        lyt_bottom.addWidget(self.__render_btn, 0, 2, 1, 1)
+        lyt_bottom.addWidget(self.__render_btn, 0, 3, 1, 1)
         self.__dream_btn = QPushButton("Dream Style")
         self.__dream_btn.setFixedHeight(30)
         self.__dream_btn.clicked.connect(self.__on_dream)
-        lyt_bottom.addWidget(self.__dream_btn, 1, 2, 1, 1)
+        lyt_bottom.addWidget(self.__dream_btn, 1, 3, 1, 1)
         main_lyt.addLayout(lyt_bottom)
 
     # Refresh the ui according to the model attribute
@@ -489,12 +495,12 @@ class StyleDreamer(QDialog):
 
     # On Depth Map distance parameter slider moved create visualization plane
     def __on_slider_depth_dist_moved(self, slider, value):
-        cam_mat = self.__cam.getMatrix(worldSpace=True)
-        cam_tr = self.__cam.getTranslation(space='world')
+        cam_mat = self.__cam_trsf.getMatrix(worldSpace=True)
+        cam_tr = self.__cam_trsf.getTranslation(space='world')
         cam_dir = pm.dt.Vector(cam_mat[2][0], cam_mat[2][1], cam_mat[2][2])
         cam_dir.normalize()
         if self.__plane_depth_edit is None:
-            self.__plane_depth_edit = pm.polyPlane(w=100, h=100, sx=10, sy=10, n="sd_plane_depth_edit")[0]
+            self.__plane_depth_edit = pm.polyPlane(w=1000, h=1000, sx=10, sy=10, n="sd_plane_depth_edit")[0]
             self.__shading_group_depth_edit = pm.sets(renderable=True, noSurfaceShader=True, empty=True,
                                                       name='sd_shading_group_depth_edit')
             self.__shader_depth_edit = pm.shadingNode('aiStandardSurface', asShader=True, name='sd_shader_depth_edit')
@@ -521,10 +527,14 @@ class StyleDreamer(QDialog):
 
     # Retrieve the depth min and max distance in the scene
     def __retrieve_depth_distance(self):
-        self.__cam = None
-        for vp in pm.getPanel(type="modelPanel"):
-            self.__cam = pm.modelEditor(vp, q=1, av=1, cam=1)
-        min_val, max_val = StyleDreamer.find_boundaries_from_camera(self.__cam)
+        self.__cam_trsf = None
+        for cam in pm.ls(type="camera"):
+            if cam.renderable.get():
+                self.__cam_trsf = cam.getParent()
+                break
+        if self.__cam_trsf is None:
+            return
+        min_val, max_val = StyleDreamer.find_boundaries_from_camera(self.__cam_trsf)
         min_bound = round(max(min_val - max_val / 2, 0))
         max_bound = round(max_val * 1.5)
         depth_min_dist = round(min_val, 3)
@@ -646,3 +656,8 @@ class StyleDreamer(QDialog):
         self.__previous_seed = seed
         self.__block_new_request = False
         self.__refresh_btn()
+
+    # Open Web UI and the render folder
+    def __on_open_web_ui(self):
+        webbrowser.open(self.__url_server)
+        subprocess.Popen('explorer "'+self.__controlnet_manager.get_render_dir().replace("/","\\")+'"')

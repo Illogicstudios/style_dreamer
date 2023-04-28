@@ -199,6 +199,10 @@ class ControlNetManager:
         self.__request_eta_callback = CallbackThread(self.__on_request_eta_finished)
         self.__request_eta_run = CallbackThread(self.__run_observer_eta)
 
+    # Getter of the render directory
+    def get_render_dir(self):
+        return self.__render_dir
+
     # Set the Output parameters (needed for render)
     def __set_output_params(self):
         pm.setAttr("defaultRenderGlobals.imageFilePrefix", os.path.join(self.__render_dir, "<RenderPass>"))
