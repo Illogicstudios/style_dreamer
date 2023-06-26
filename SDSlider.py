@@ -24,7 +24,7 @@ class SDSlider(QWidget):
         :param tooltip
         :param parent
         """
-        super().__init__(parent, *args, **kwargs)
+        super().__init__(parent)
         self.__style_dreamer = style_dreamer
         self.__type = type
         self.__tooltip = tooltip
