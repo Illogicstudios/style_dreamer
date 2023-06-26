@@ -4,10 +4,18 @@ from abc import *
 
 class DepthDetail(ABC):
     def __init__(self, pos_array):
+        """
+        Constructor
+        :param pos_array:
+        """
         self.__pos_array = pos_array
 
-    # Set Interpolation Step according to the array of point
     def set_interp_on(self, remap_node):
+        """
+        Set Interpolation Step according to the array of point
+        :param remap_node
+        :return:
+        """
         for index, interp_data in enumerate(self.__pos_array):
             interp_index = index + 2
             remap_node.value[interp_index].value_FloatValue.set(interp_data[0])

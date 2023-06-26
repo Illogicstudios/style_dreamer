@@ -19,10 +19,12 @@ from .StyleVisualizer import *
 
 
 class ControlNetManager:
-
-    # Set Features Overrides parameters (needed for render)
     @staticmethod
     def __set_features_overrides():
+        """
+        Set Features Overrides parameters (needed for render)
+        :return:
+        """
         pm.setAttr("defaultArnoldRenderOptions.ignoreTextures", 0)
         pm.setAttr("defaultArnoldRenderOptions.ignoreShaders", 0)
         pm.setAttr("defaultArnoldRenderOptions.ignoreAtmosphere", 1)
@@ -43,14 +45,20 @@ class ControlNetManager:
         for aov in aov_list:
             aov.enabled.set(False)
 
-    # Set raw colorspace (needed for render)
     @staticmethod
     def __set_raw_colorspace():
+        """
+        Set raw colorspace (needed for render)
+        :return:
+        """
         pm.setAttr("defaultArnoldDriver.colorManagement", 0)
 
-    # Set sampling parameters (needed for render)
     @staticmethod
     def __set_sampling_params():
+        """
+        Set sampling parameters (needed for render)
+        :return:
+        """
         pm.setAttr("defaultArnoldRenderOptions.AASamples", 3)
         pm.setAttr("defaultArnoldRenderOptions.GIDiffuseSamples", 2)
         pm.setAttr("defaultArnoldRenderOptions.GISpecularSamples", 1)
@@ -61,25 +69,38 @@ class ControlNetManager:
         pm.setAttr("defaultArnoldRenderOptions.GISpecularDepth", 1)
         pm.setAttr("defaultArnoldRenderOptions.enableAdaptiveSampling", 0)
 
-    # Hide furs (needed for render)
     @staticmethod
     def __hide_furs():
+        """
+        Hide furs (needed for render)
+        :return:
+        """
         standins = pm.ls(type="aiStandIn")
         for standin in standins:
             if re.match(r"^.*fur.*$", standin.dso.get()):
                 pm.hide(standin)
 
-    # Remove render layers (needed for render)
     @staticmethod
     def __remove_render_layer():
+        """
+        Remove render layers (needed for render)
+        :return:
+        """
         render_layers = pm.ls(type="renderLayer")
         for render_layer in render_layers:
             render_layer.renderable.set(render_layer.name() == "defaultRenderLayer")
 
-    # Inspired from https://github.com/coolzilj/Blender-ControlNet
-    # Request the Stable Diffusion Controlnet API
+    #
     @staticmethod
     def __request_controlnet_api(params, request_url, output_dir):
+        """
+        Inspired from https://github.com/coolzilj/Blender-ControlNet
+        Request the Stable Diffusion Controlnet API
+        :param params
+        :param request_url
+        :param output_dir
+        :return:
+        """
         # create headers
         headers = {
             "User-Agent": "",
@@ -103,9 +124,13 @@ class ControlNetManager:
         else:
             return ControlNetManager.handle_api_error(response)
 
-    # Handle Stable Diffusion API Response Error
     @staticmethod
     def handle_api_error(response):
+        """
+        Handle Stable Diffusion API Response Error
+        :param response
+        :return:
+        """
         if response.status_code == 404:
             try:
                 response_obj = response.json()
@@ -126,9 +151,14 @@ class ControlNetManager:
             msg = "An error occurred in the server : \n\n" + str(response.content)
         return None, -1, msg
 
-    # Handle Stable Diffusion API Response Success
     @staticmethod
     def handle_api_success(response, output_dir):
+        """
+        Handle Stable Diffusion API Response Success
+        :param response
+        :param output_dir
+        :return:
+        """
         try:
             response_obj = response.json()
             infos = json.loads(response_obj["info"])
@@ -164,9 +194,13 @@ class ControlNetManager:
         # return the temp file
         return output_files, seed, "Success"
 
-    # Request the Stable Diffusion for the ETA
     @staticmethod
     def __request_eta_api(request_url):
+        """
+        Request the Stable Diffusion for the ETA
+        :param request_url
+        :return:
+        """
         # create headers
         headers = {"User-Agent": "", "Accept": "*/*", "Accept-Encoding": "gzip, deflate, br"}
 
@@ -183,6 +217,11 @@ class ControlNetManager:
             return response.status_code
 
     def __init__(self, url_server, callback_dream):
+        """
+        Constructor
+        :param url_server
+        :param callback_dream
+        """
         self.__datas = []
         self.__url_server = url_server
         self.__callback_dream = callback_dream
@@ -199,12 +238,18 @@ class ControlNetManager:
         self.__request_eta_callback = CallbackThread(self.__on_request_eta_finished)
         self.__request_eta_run = CallbackThread(self.__run_observer_eta)
 
-    # Getter of the render directory
     def get_render_dir(self):
+        """
+        Getter of the render directory
+        :return: render directory
+        """
         return self.__render_dir
 
-    # Set the Output parameters (needed for render)
     def __set_output_params(self):
+        """
+        Set the Output parameters (needed for render)
+        :return:
+        """
         pm.setAttr("defaultRenderGlobals.imageFilePrefix", os.path.join(self.__render_dir, "<RenderPass>"))
         pm.setAttr("defaultArnoldDriver.mergeAOVs", False)
         pm.setAttr("defaultResolution.width", self.__datas["width"])
@@ -219,12 +264,18 @@ class ControlNetManager:
         pm.setAttr("defaultRenderGlobals.periodInExt", 1)
         pm.setAttr("defaultRenderGlobals.putFrameBeforeExt", True)
 
-    # Getter of whether a request is pending
     def is_requesting_dream(self):
+        """
+        Getter of whether a request is pending
+        :return: is requesting dream
+        """
         return self.__requesting_dream
 
-    # Delete the AOV created objects
     def __delete_created_objects(self):
+        """
+        Delete the AOV created objects
+        :return:
+        """
         for obj in self.__created_objects:
             try:
                 pm.delete(obj)
@@ -233,8 +284,11 @@ class ControlNetManager:
                 pass
         self.__created_objects.clear()
 
-    # Create Depth AOV
     def __create_depth_aov(self):
+        """
+        Create Depth AOV
+        :return:
+        """
         depth_max_dist = self.__datas["depth_max_dist"]
         depth_details = self.__datas["depth_type"]
         depth_min_dist = self.__datas["depth_min_dist"]
@@ -261,8 +315,11 @@ class ControlNetManager:
         sdd_inverse_node.outFloat >> node_aov.defaultValue
         depth_details.set_interp_on(sdd_remap_node)
 
-    # Create Normal AOV
     def __create_normal_aov(self):
+        """
+        Create Normal AOV
+        :return:
+        """
         sdn_normal_node = pm.shadingNode("aiStateVector", name="sdn_normal", asUtility=True)
         self.__created_objects.append(sdn_normal_node)
         sdn_normal_node.variable.set(6)
@@ -297,8 +354,11 @@ class ControlNetManager:
         self.__created_objects.append(node_aov)
         sdn_space_trsf_2_node.outValue >> node_aov.defaultValue
 
-    # Create Edges AOV
     def __create_edges_aov(self):
+        """
+        Create Edges AOV
+        :return:
+        """
         sde_toon_shader_node = pm.shadingNode("aiToon", name="sde_toon", asShader=True)
         self.__created_objects.append(sde_toon_shader_node)
         sde_toon_shader_node.edgeColor.set((1, 1, 1))
@@ -323,16 +383,22 @@ class ControlNetManager:
         pm.connectAttr(contour_filter + ".message", aov_node_name + '.outputs[0].filter', f=True)
         sde_toon_shader_node.outColor >> node_aov.defaultValue
 
-    # Get the txt2img parameters
     def __params_txt2img(self):
+        """
+        Get the txt2img parameters
+        :return: txt2img parameters
+        """
         return {
             "enable_hr": False,
             "firstphase_width": 0,
             "firstphase_height": 0,
         }
 
-    # Get the img2img parameters
     def __params_img2img(self):
+        """
+        Get the img2img parameters
+        :return: img2img parameters
+        """
         return {
             "denoising_strength": self.__datas["denoising_strength"],
             "init_images": [
@@ -341,15 +407,21 @@ class ControlNetManager:
             "resize_mode": 0,
         }
 
-    # Get the correct URL for the dream request
     def __get_request_url(self):
+        """
+        Get the correct URL for the dream request
+        :return: request url
+        """
         if self.__datas["denoising_strength"] < 1.0:
             return self.__url_server + "/sdapi/v1/img2img"
         else:
             return self.__url_server + "/sdapi/v1/txt2img"
 
-    # Generate the params dict
     def __generate_params(self):
+        """
+        Generate the params dict
+        :return:
+        """
         # COMMON PARAMETERS
         params = {
             "prompt": self.__datas["prompt"],
@@ -456,12 +528,19 @@ class ControlNetManager:
                 })
         return params
 
-    # Setter of the datas
     def set_datas(self, datas):
+        """
+        Setter of the datas
+        :param datas
+        :return:
+        """
         self.__datas = datas
 
-    # Prepare for a render
     def prepare_cn_render(self):
+        """
+        Prepare for a render
+        :return:
+        """
         pm.loadPlugin("lookdevKit.mll")
         ControlNetManager.__remove_render_layer()
         ControlNetManager.__set_features_overrides()
@@ -472,34 +551,53 @@ class ControlNetManager:
         self.__create_normal_aov()
         self.__create_edges_aov()
 
-    # On main window close, close the visualizer
     def on_close(self):
+        """
+        On main window close, close the visualizer
+        :return:
+        """
         self.__style_visualizer.close()
         self.__style_visualizer.deleteLater()
 
-    # Retrieve existing render
     def __retrieve_render(self, render_name, render_filename):
+        """
+        Retrieve existing render
+        :param render_name
+        :param render_filename
+        :return:
+        """
         path = os.path.join(self.__render_dir, render_filename)
         if os.path.exists(path):
             with open(path, "rb") as file:
                 self.__controlnet_img[render_name] = (path, base64.b64encode(file.read()).decode())
 
-    # Retrieve existing renders
     def retrieve_renders(self):
+        """
+        Retrieve existing renders
+        :return:
+        """
         self.__controlnet_img.clear()
         self.__retrieve_render(BEAUTY_NAME, "beauty_1.png")
         self.__retrieve_render(DEPTH_NAME, DEPTH_NAME + ".png")
         self.__retrieve_render(NORMAL_NAME, NORMAL_NAME + ".png")
         self.__retrieve_render(EDGES_NAME, EDGES_NAME + ".png")
 
-    # Generate ControlNet Render with AOV created
     def cn_render(self):
+        """
+        Generate ControlNet Render with AOV created
+        :return:
+        """
         pm.mel.eval("arnoldRender -seq 1")
         self.retrieve_renders()
         self.__delete_created_objects()
 
-    # Display the Visualizer
     def display_render(self, reinit_output_files=True, show = True):
+        """
+        Display the Visualizer
+        :param reinit_output_files
+        :param show
+        :return:
+        """
         used_input_filepaths = []
         input_files_and_names = []
         if BEAUTY_NAME in self.__controlnet_img:
@@ -533,8 +631,14 @@ class ControlNetManager:
             self.__style_visualizer.show()
         self.__style_visualizer.set_focus_input()
 
-    # Callback Dream Request end, display the visualizer
     def __on_request_dream_finished(self, output_filepaths, seed, error_msg):
+        """
+        Callback Dream Request end, display the visualizer
+        :param output_filepaths
+        :param seed
+        :param error_msg
+        :return:
+        """
         self.__requesting_dream = False
         self.__job_timestamp = None
         if output_filepaths is None:
@@ -555,8 +659,12 @@ class ControlNetManager:
         self.__style_visualizer.refresh_progress_bar()
         self.__callback_dream(seed)
 
-    # Callback ETA request, display on the visualizer
     def __on_request_eta_finished(self, response_dict):
+        """
+        Callback ETA request, display on the visualizer
+        :param response_dict
+        :return:
+        """
         renew_eta_request = True
         if type(response_dict) is int:
             if not self.__requesting_dream:
@@ -578,16 +686,22 @@ class ControlNetManager:
         if renew_eta_request:
             threading.Thread(target=self.__request_eta).start()
 
-    # Run the process  observing the ETA requests
     def __run_observer_eta(self):
+        """
+        Run the process  observing the ETA requests
+        :return:
+        """
         self.__launch_timestamp = int(time.time())
         self.__job_timestamp = None
         self.__style_visualizer.set_eta(0)
         self.__style_visualizer.refresh_progress_bar()
         self.__request_eta()
 
-    # Launch the Controlnet Stable Diffusion Request
     def request_controlnet(self):
+        """
+        Launch the Controlnet Stable Diffusion Request
+        :return:
+        """
         self.__requesting_dream = True
         os.makedirs(self.__output_dir, exist_ok=True)
         params = self.__generate_params()
@@ -596,8 +710,11 @@ class ControlNetManager:
         output_filepaths, seed, error_msg = ControlNetManager.__request_controlnet_api(params, request_url, self.__output_dir)
         self.__request_dream_callback.run_callback(output_filepaths, seed, error_msg)
 
-    # Run the request for ETA
     def __request_eta(self):
+        """
+        Run the request for ETA
+        :return:
+        """
         request_url = self.__url_server + "/sdapi/v1/progress"
         response_dict = ControlNetManager.__request_eta_api(request_url)
         self.__request_eta_callback.run_callback(response_dict)
@@ -608,14 +725,26 @@ class CallbackThread(QThread):
     __signal = Signal()
 
     def __init__(self, callback):
+        """
+        Constructor
+        :param callback:
+        """
         super().__init__(None)
         self.__args = None
         self.__callback_fct = callback
         self.__signal.connect(self.__callback)
 
     def run_callback(self, *args):
+        """
+        Emit the signal
+        :return:
+        """
         self.__args = args
         self.__signal.emit()
 
     def __callback(self):
+        """
+        Callback function
+        :return:
+        """
         self.__callback_fct(*self.__args)

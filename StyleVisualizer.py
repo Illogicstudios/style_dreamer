@@ -19,12 +19,21 @@ import style_dreamer.StyleDreamer as sd
 
 class CurrentImageLabel(QLabel):
     def __init__(self, path):
+        """
+        Constructor
+        :param path
+        """
         super(CurrentImageLabel, self).__init__()
         self.setFrameStyle(QFrame.StyledPanel)
         self.__pixmap = QPixmap(path)
         self.setSizePolicy(QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding)
 
     def paintEvent(self, event):
+        """
+        Paint function
+        :param event
+        :return:
+        """
         size = self.size()
         painter = QPainter(self)
         point = QtCore.QPoint(0, 0)
@@ -34,14 +43,22 @@ class CurrentImageLabel(QLabel):
         point.setY((size.height() - scaledPix.height()) / 2)
         painter.drawPixmap(point, scaledPix)
 
-    # Change path of the Image and repaint it
     def set_path(self, path):
+        """
+        Change path of the Image and repaint it
+        :param path:
+        :return:
+        """
         self.__pixmap = QPixmap(path)
         self.repaint()
 
 
 class CurrentImageLabelWidget(QWidget):
     def __init__(self, path):
+        """
+        Constructor
+        :param path
+        """
         QWidget.__init__(self)
         self.__label = CurrentImageLabel(path)
 
@@ -50,14 +67,23 @@ class CurrentImageLabelWidget(QWidget):
         vb_layout.addWidget(self.__label)
         self.setLayout(vb_layout)
 
-    # Change the Image path
     def set_path(self, path):
+        """
+        Change the Image path
+        :param path
+        :return:
+        """
         self.__label.set_path(path)
 
 
 class StyleVisualizer(QDialog):
 
     def __init__(self, controlnet_manager, prnt=wrapInstance(int(omui.MQtUtil.mainWindow()), QWidget)):
+        """
+        Constructor
+        :param controlnet_manager
+        :param prnt
+        """
         super(StyleVisualizer, self).__init__(prnt)
         # Model attributes
         self.__controlnet_manager = controlnet_manager
@@ -85,28 +111,50 @@ class StyleVisualizer(QDialog):
         self.__create_ui()
         self.__refresh_ui()
 
-    # Setter of the ETA
     def set_eta(self, eta):
+        """
+        Setter of the ETA
+        :param eta
+        :return:
+        """
         self.__request_eta = eta
 
-    # Getter of the ETA
     def get_eta(self):
+        """
+         Getter of the ETA
+        :return: eta
+        """
         return self.__request_eta
 
-    # Setter of the input files
     def set_input_files(self, input_filepaths):
+        """
+        Setter of the input files
+        :param input_filepaths
+        :return:
+        """
         self.__input_files = input_filepaths
 
-    # Setter of the input used files
     def set_input_used_files(self, input_render_used):
+        """
+        Setter of the input used files
+        :param input_render_used
+        :return:
+        """
         self.__input_used_files = input_render_used
 
-    # Setter of the output files
     def set_output_files(self, output_filepaths):
+        """
+        Setter of the output files
+        :param output_filepaths
+        :return:
+        """
         self.__output_files = output_filepaths
 
-    # Create the ui
     def __create_ui(self):
+        """
+        Create the ui
+        :return:
+        """
         # Reinit attributes of the UI
         self.setMinimumSize(self.__ui_min_width, self.__ui_min_height)
         self.resize(self.__ui_width, self.__ui_height)
@@ -168,32 +216,47 @@ class StyleVisualizer(QDialog):
         self.__ui_list_output_file.itemSelectionChanged.connect(self.__on_output_file_selected)
         main_lyt.addWidget(self.__ui_list_output_file)
 
-    # Refresh the ui according to the model attribute
     def __refresh_ui(self):
+        """
+        Refresh the ui according to the model attribute
+        :return:
+        """
         self.__refresh_current_img()
         self.refresh_input_files()
         self.refresh_output_files()
         self.refresh_progress_bar()
 
-    # Set the focus on the input files
     def set_focus_input(self):
+        """
+        Set the focus on the input files
+        :return:
+        """
         self.raise_()
         self.__ui_list_input_file.setFocus()
         self.__ui_list_input_file.setCurrentItem(self.__ui_list_input_file.item(0))
 
-    # Set the focus on the output files
     def set_focus_output(self):
+        """
+        Set the focus on the output files
+        :return:
+        """
         self.raise_()
         self.__ui_list_output_file.setFocus()
         self.__ui_list_output_file.setCurrentItem(self.__ui_list_output_file.item(0))
 
-    # Refresh the current Image UI
     def __refresh_current_img(self):
+        """
+        Refresh the current Image UI
+        :return:
+        """
         if self.__current_image is not None:
             self.__ui_current_img.set_path(self.__current_image)
 
-    # Refresh the list of input images
     def refresh_input_files(self):
+        """
+        Refresh the list of input images
+        :return:
+        """
         self.__ui_list_input_file.clear()
         for name, file_path in self.__input_files:
             item = QListWidgetItem()
@@ -207,8 +270,11 @@ class StyleVisualizer(QDialog):
             item.setData(Qt.UserRole, file_path)
             self.__ui_list_input_file.addItem(item)
 
-    # Refresh the list of output images
     def refresh_output_files(self):
+        """
+        Refresh the list of output images
+        :return:
+        """
         self.__ui_list_output_file.clear()
         for file_path in self.__output_files:
             item = QListWidgetItem()
@@ -216,21 +282,35 @@ class StyleVisualizer(QDialog):
             item.setData(Qt.UserRole, file_path)
             self.__ui_list_output_file.addItem(item)
 
-    # Refresh the progress bar according to the eta
     def refresh_progress_bar(self):
+        """
+        Refresh the progress bar according to the eta
+        :return:
+        """
         self.__progress_bar.setEnabled(self.__controlnet_manager.is_requesting_dream())
         self.__progress_bar.setValue(self.__request_eta)
 
-    # On Input file selected display in the current image
     def __on_input_file_selected(self):
+        """
+        On Input file selected display in the current image
+        :return:
+        """
         self.__on_file_selected(self.__ui_list_input_file, self.__ui_list_output_file)
 
-    # On Output file selected display in the current image
     def __on_output_file_selected(self):
+        """
+        On Output file selected display in the current image
+        :return:
+        """
         self.__on_file_selected(self.__ui_list_output_file, self.__ui_list_input_file)
 
-    # On file selected display in the current image
     def __on_file_selected(self, list_selection, list_unselection):
+        """
+        On file selected display in the current image
+        :param list_selection
+        :param list_unselection
+        :return:
+        """
         selected_items = list_selection.selectedItems()
         list_unselection.clearSelection()
         if len(selected_items) == 1:

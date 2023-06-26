@@ -48,17 +48,26 @@ from .ControlNetManager import *
 
 class StyleDreamer(QDialog):
 
-    # Generate a Pyside separator
     @staticmethod
     def get_separator(vertical=False):
+        """
+        Generate a Pyside separator
+        :param vertical
+        :return: separator
+        """
         line = QFrame()
         line.setFrameShape(QFrame.VLine if vertical else QFrame.HLine)
         line.setFrameShadow(QFrame.Raised)
         return line
 
-    # Test if a point 3D is in front of the camera
     @staticmethod
     def is_point_in_front_of_camera(cam_transform, pt):
+        """
+        Test if a point 3D is in front of the camera
+        :param cam_transform
+        :param pt
+        :return: is in front of camera
+        """
         cam_pos = cam_transform.getTranslation(space="world")
         world_matrix = cam_transform.getMatrix(worldSpace=True)
         front_vector = pm.dt.Point(world_matrix[3][:2])
@@ -67,9 +76,13 @@ class StyleDreamer(QDialog):
         pt_vector.normalize()
         return pm.dt.dot(front_vector, pt_vector) >= 0
 
-    # Find Boundaries of the scene seen by the camera
     @staticmethod
     def find_boundaries_from_camera(cam_transform):
+        """
+        Find Boundaries of the scene seen by the camera
+        :param cam_transform
+        :return:
+        """
         # Get all mesh transform nodes in the scene
         mesh_transforms = [node.getParent() for node in pm.ls(type="mesh")]
 
@@ -103,9 +116,12 @@ class StyleDreamer(QDialog):
         dist_max_res = max(distances_max) if len(distances_max) > 0 else 0
         return dist_min_res, dist_max_res
 
-    # Test if Arnold is loaded and display a warning popup if it is not
     @staticmethod
     def test_arnold_renderer():
+        """
+        Test if Arnold is loaded and display a warning popup if it is not
+        :return: arnold renderer loaded
+        """
         arnold_renderer_loaded = pm.objExists("defaultArnoldRenderOptions")
         if not arnold_renderer_loaded:
             msg = QMessageBox()
@@ -194,8 +210,11 @@ class StyleDreamer(QDialog):
         else:
             self.close()
 
-    # Default value of parameters
     def __init_attributes(self):
+        """
+        Default value of parameters
+        :return:
+        """
         self.__prompt = ""
         self.__neg_prompt = ""
         self.__random_seed = True
@@ -211,8 +230,11 @@ class StyleDreamer(QDialog):
         self.__width_img = pm.getAttr("defaultResolution.width")
         self.__height_img = pm.getAttr("defaultResolution.height")
 
-    # Set value of all sliders
     def __set_value_sliders(self):
+        """
+        Set value of all sliders
+        :return:
+        """
         self.__image_count_slider.set_value(self.__image_count)
         self.__sampling_steps_slider.set_value(self.__sampling_steps)
         self.__cfg_scale_slider.set_value(self.__cfg_scale)
@@ -224,15 +246,21 @@ class StyleDreamer(QDialog):
         self.__weight_edges_slider.set_value(self.__weight_edges)
         self.__retrieve_depth_distance()
 
-    # Reinit values and refresh UI
     def __reinit(self):
+        """
+        Reinit values and refresh UI
+        :return:
+        """
         self.__init_attributes()
         self.__set_value_sliders()
         self.__refresh_ui()
         self.__on_slider_render_changed()
 
-    # Save preferences
     def __save_prefs(self):
+        """
+        Save preferences
+        :return:
+        """
         size = self.size()
         self.__prefs["window_size"] = {"width": size.width(), "height": size.height()}
         pos = self.pos()
@@ -248,8 +276,11 @@ class StyleDreamer(QDialog):
         self.__prefs["weight_edges"] = float(self.__weight_edges_slider.get_value())
         self.__prefs["depth_type"] = self.__depth_type
 
-    # Retrieve preferences
     def __retrieve_prefs(self):
+        """
+        Retrieve preferences
+        :return:
+        """
         if "window_size" in self.__prefs:
             size = self.__prefs["window_size"]
             self.__ui_width = size["width"]
@@ -281,13 +312,19 @@ class StyleDreamer(QDialog):
     def showEvent(self, arg__1: QShowEvent) -> None:
         pass
 
-    # Remove callbacks
     def hideEvent(self, arg__1: QCloseEvent) -> None:
+        """
+        Close the visualizer
+        :return:
+        """
         self.__controlnet_manager.on_close()
         self.__save_prefs()
 
-    # Create the ui
     def __create_ui(self):
+        """
+        Create the ui
+        :return:
+        """
         # Reinit attributes of the UI
         self.setMinimumSize(self.__ui_min_width, self.__ui_min_height)
         self.resize(self.__ui_width, self.__ui_height)
@@ -445,26 +482,38 @@ class StyleDreamer(QDialog):
         lyt_bottom.addWidget(self.__dream_btn, 1, 3, 1, 1)
         main_lyt.addLayout(lyt_bottom)
 
-    # Refresh the ui according to the model attribute
     def __refresh_ui(self):
+        """
+        Refresh the ui according to the model attribute
+        :return:
+        """
         self.__refresh_prompt()
         self.__refresh_seed()
         self.__refresh_sliders()
         self.__refresh_depth_type()
         self.__refresh_btn()
 
-    # Refresh the prompt parameters
     def __refresh_prompt(self):
+        """
+        Refresh the prompt parameters
+        :return:
+        """
         self.__ui_prompt.setPlainText(self.__prompt)
         self.__ui_neg_prompt.setPlainText(self.__neg_prompt)
 
-    # Refresh the seed parameters
     def __refresh_seed(self):
+        """
+        Refresh the seed parameters
+        :return:
+        """
         self.__ui_seed.setText(str(self.__seed))
         self.__ui_random_seed_cb.setChecked(self.__random_seed)
 
-    # Refresh all the sliders
     def __refresh_sliders(self):
+        """
+        Refresh all the sliders
+        :return:
+        """
         self.__image_count_slider.refresh_ui()
         self.__sampling_steps_slider.refresh_ui()
         self.__cfg_scale_slider.refresh_ui()
@@ -477,24 +526,38 @@ class StyleDreamer(QDialog):
         self.__depth_min_dist_slider.refresh_ui()
         self.__depth_max_dist_slider.refresh_ui()
 
-    # Refresh the Render and Dream buttons
     def __refresh_btn(self):
+        """
+        Refresh the Render and Dream buttons
+        :return:
+        """
         self.__render_btn.setEnabled(not self.__block_new_request)
         self.__dream_btn.setEnabled(not self.__block_new_request)
 
-    # Refresh the Depth type
     def __refresh_depth_type(self):
+        """
+        Refresh the Depth type
+        :return:
+        """
         for index in range(self.__ui_depth_type_cbb.count()):
             if self.__ui_depth_type_cbb.itemData(index, Qt.UserRole) == self.__depth_type:
                 self.__ui_depth_type_cbb.setCurrentIndex(index)
 
-    # On render slider changed Update visualizer
     def __on_slider_render_changed(self):
+        """
+        On render slider changed Update visualizer
+        :return:
+        """
         self.__controlnet_manager.set_datas(self.__get_datas())
         self.__controlnet_manager.display_render(False, False)
 
-    # On Depth Map distance parameter slider moved create visualization plane
     def __on_slider_depth_dist_moved(self, slider, value):
+        """
+        On Depth Map distance parameter slider moved create visualization plane
+        :param slider
+        :param value
+        :return:
+        """
         cam_mat = self.__cam_trsf.getMatrix(worldSpace=True)
         cam_tr = self.__cam_trsf.getTranslation(space='world')
         cam_dir = pm.dt.Vector(cam_mat[2][0], cam_mat[2][1], cam_mat[2][2])
@@ -516,8 +579,11 @@ class StyleDreamer(QDialog):
         rotation_quat = pm.dt.Vector(0, 1, 0).rotateTo(cam_dir)
         self.__plane_depth_edit.setRotation(rotation_quat.asEulerRotation(), space='world')
 
-    # On slider depth released delete the visualization plane
     def __on_slider_depth_released(self):
+        """
+        On slider depth released delete the visualization plane
+        :return:
+        """
         pm.delete(self.__plane_depth_edit)
         pm.delete(self.__shader_depth_edit)
         pm.delete(self.__shading_group_depth_edit)
@@ -525,8 +591,11 @@ class StyleDreamer(QDialog):
         self.__shader_depth_edit = None
         self.__shading_group_depth_edit = None
 
-    # Retrieve the depth min and max distance in the scene
     def __retrieve_depth_distance(self):
+        """
+        Retrieve the depth min and max distance in the scene
+        :return:
+        """
         self.__cam_trsf = None
         for cam in pm.ls(type="camera"):
             if cam.renderable.get():
@@ -546,18 +615,29 @@ class StyleDreamer(QDialog):
         self.__depth_max_dist_slider.set_max(max_bound)
         self.__depth_max_dist_slider.set_value(depth_max_dist)
 
-    # On recompute depth distances
     def __on_recompute_depth_dist(self):
+        """
+        On recompute depth distances
+        :return:
+        """
         self.__retrieve_depth_distance()
         self.__depth_min_dist_slider.refresh_ui()
         self.__depth_max_dist_slider.refresh_ui()
 
-    # On Depth type changed
     def __on_depth_type_changed(self, index):
+        """
+        On Depth type changed
+        :param index
+        :return:
+        """
         self.__depth_type = self.__ui_depth_type_cbb.itemData(index, Qt.UserRole)
 
-    # On random seed chackbox state changed
     def __on_random_seed_checked(self, state):
+        """
+        On random seed checkbox state changed retrieve value
+        :param state
+        :return:
+        """
         self.__random_seed = state == 2
         if self.__random_seed:
             self.__seed = -1
@@ -565,8 +645,12 @@ class StyleDreamer(QDialog):
             self.__seed = 0
         self.__refresh_seed()
 
-    # On seed modified
     def __on_seed_modified(self, seed):
+        """
+        On seed modified retrieve value
+        :param seed
+        :return:
+        """
         try:
             self.__seed = int(seed)
             if self.__seed == -1:
@@ -578,17 +662,26 @@ class StyleDreamer(QDialog):
             # Nothing
             pass
 
-    # On seed editing finished
     def __on_seed_editing_finished(self):
+        """
+        On seed editing finished retrieve value
+        :return:
+        """
         self.__ui_seed.setText(str(self.__seed))
 
-    # Reset the seed to the previous one
     def __set_previous_seed(self):
+        """
+        Reset the seed to the previous one
+        :return:
+        """
         self.__seed = self.__previous_seed
         self.__refresh_seed()
 
-    # Compute the batch count and Batch size according to the number of image
     def __get_batch_param(self):
+        """
+        Compute the batch count and Batch size according to the number of image
+        :return:
+        """
         image_count = int(self.__image_count_slider.get_value())
         if image_count <= 8:
             return 1, image_count
@@ -600,8 +693,11 @@ class StyleDreamer(QDialog):
                     break
             return image_count / batch_size, batch_size
 
-    # Generate datas to give to stable diffusion API
     def __get_datas(self):
+        """
+        Generate datas to give to stable diffusion API
+        :return:
+        """
         batch_count, batch_size = self.__get_batch_param()
         datas = {
             "prompt": str(self.__ui_prompt.toPlainText()),
@@ -623,8 +719,11 @@ class StyleDreamer(QDialog):
         }
         return datas
 
-    # Submit the dream request
     def __on_dream(self):
+        """
+        Submit the dream request
+        :return:
+        """
         self.__previous_seed = self.__seed
         self.__block_new_request = True
         self.__refresh_btn()
@@ -633,12 +732,18 @@ class StyleDreamer(QDialog):
         self.__controlnet_manager.display_render()
         threading.Thread(target=self.__controlnet_manager.request_controlnet).start()
 
-    # Open the visualizer
     def __on_open_visualizer(self):
+        """
+        Open the visualizer
+        :return:
+        """
         self.__controlnet_manager.display_render(False)
 
-    # Render the scene
     def __on_render(self):
+        """
+        Render the scene
+        :return:
+        """
         self.__block_new_request = True
         self.__refresh_btn()
 
@@ -651,13 +756,20 @@ class StyleDreamer(QDialog):
         self.__block_new_request = False
         self.__refresh_btn()
 
-    # Callback dream request
     def __on_dream_done(self,seed):
+        """
+        Callback dream request
+        :param seed
+        :return:
+        """
         self.__previous_seed = seed
         self.__block_new_request = False
         self.__refresh_btn()
 
-    # Open Web UI and the render folder
     def __on_open_web_ui(self):
+        """
+        Open Web UI and the render folder
+        :return:
+        """
         webbrowser.open(self.__url_server)
         subprocess.Popen('explorer "'+self.__controlnet_manager.get_render_dir().replace("/","\\")+'"')
